@@ -1,6 +1,7 @@
 #include "Scene.h"
 #include <numbers>
 #include <cmath>
+#include "Raytracer.h"
 
 Scene::Scene(int InWidth, int InHeight, SDL_Renderer* InRender) 
 {
@@ -40,5 +41,36 @@ Scene::~Scene()
 
 void Scene::Update(float InDeltaTime) 
 {
+    static float AspectRatio = static_cast<float>(Width) / static_cast<float>(Height);
+    static float VerticalFovDegrees = 60.f;
+    static float HalfFovRads = (VerticalFovDegrees * 0.5f) * std::numbers::pi / 180.f;
+    static float Fov = tanf(HalfFovRads);
 
+    static Vector3 CameraPosition{0, 0, 0};
+
+    static Raytracer Raytracer;
+
+    for(int H = 0; H < Height; ++H) 
+    {
+        for(int W = 0; W < Width; ++W) {
+            float NDC_X = (static_cast<float>(W) + 0.5f) / static_cast<float>(Width);  //[0, 1]
+            float NDC_Y = (static_cast<float>(H) + 0.5f) / static_cast<float>(Height); //[0, 1]
+
+            float Plane_X = (2.f * NDC_X) -1.f;   //[-1, 1]
+            float Plane_Y = 1.f - (2.f * NDC_Y);  //[-1, 1]
+
+            Plane_X = Plane_X * AspectRatio * Fov;
+            Plane_Y = Plane_Y * Fov;
+
+            Vector3 RayDirection = Vector3{Plane_X, Plane_Y, CameraPosition.Z -1.f} - CameraPosition;
+            RayDirection = RayDirection.Normalized();
+
+            Ray PixelRay{CameraPosition, RayDirection};
+
+            Color PixelColor = Raytracer.Raytrace(PixelRay, *this);
+
+            SDL_SetRenderDrawColor(Renderer, PixelColor.R * 255.f, PixelColor.G * 255.f, PixelColor.B * 255.f, 255);
+            SDL_RenderDrawPoint(Renderer, W, H);
+        }
+    }
 }
