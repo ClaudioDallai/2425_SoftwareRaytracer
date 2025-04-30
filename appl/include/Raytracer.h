@@ -12,10 +12,11 @@ struct RayHit {
     Vector3 Point;
     const Sphere* Object;
     float Distance;
+    Vector3 Normal;
 };
 
 class Raytracer 
 {
 public:
-    Color Raytrace(const Ray& InRay, const Scene& InScene);
+    Color Raytrace(const Ray& InRay, const Scene& InScene, int InCurrentDepth);
 };
